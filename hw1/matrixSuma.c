@@ -21,6 +21,7 @@ task a
 #include <sys/time.h>
 #define MAXSIZE 10000  /* maximum matrix size */
 #define MAXWORKERS 10   /* maximum number of workers */
+#define DEBUG
 
 pthread_mutex_t barrier;  /* mutex lock for the barrier */
 pthread_cond_t go;        /* condition variable for leaving */
@@ -64,8 +65,8 @@ typedef struct { /*struct to save the min/max value and its position*/
   int val;
 }ValuePosition;
 
-ValuePosition workerMin[];
-ValuePosition workerMax[];
+ValuePosition workerMin[MAXWORKERS];
+ValuePosition workerMax[MAXWORKERS];
 
 void *Worker(void *);
 
@@ -94,7 +95,7 @@ int main(int argc, char *argv[]) {
   /* initialize the matrix */
   for (i = 0; i < size; i++) {
 	  for (j = 0; j < size; j++) {
-          matrix[i][j] = 1;//rand()%99;
+          matrix[i][j] = rand()%99;
 	  }
   }
 
@@ -122,7 +123,7 @@ void *Worker(void *arg) {
   long myid = (long) arg;  //vilken worker/thread
   int total, i, j, first, last;
 
-#ifdef DEBUG
+#ifdef DEBUG1
   printf("worker %d (pthread id %d) has started\n", myid, pthread_self());
 #endif
 
@@ -135,20 +136,20 @@ void *Worker(void *arg) {
   ValuePosition min = {min.row= first, min.col= 0, min.val= matrix[first][0]};
   ValuePosition max = {min.row= first, min.col= 0, min.val= matrix[first][0]};
   for (i = first; i <= last; i++) //för varej rad
-    for (j = 0; j < size; j++)  //varje element i raden
+    for (j = 0; j < size; j++) { //varje element i raden
       total += matrix[i][j]; // utöka totalen med det elementet
       if(matrix[i][j] < min.val){
         min.val = matrix[i][j];
         min.row = i;
         min.col = j;
       }
-
+    
       if(matrix[i][j] > max.val){
         max.val = matrix[i][j];
         max.row = i;
         max.col = j;
       }
-     
+    }
 
   sums[myid] = total; //i array sums lägg till min total 
   workerMin[myid] = min;
@@ -157,7 +158,7 @@ void *Worker(void *arg) {
   Barrier(); 
   if (myid == 0) { //kör i ordning börjar med den första 
     total = 0;
-    for (i = 0; i < numWorkers; i++)
+    for (i = 0; i < numWorkers; i++){
       total += sums[i];   //för alla summor lägger till i en total 
       if (workerMin[i].val < min.val){
         min = workerMin[i];
@@ -165,7 +166,7 @@ void *Worker(void *arg) {
       if (workerMax[i].val > max.val){
         max = workerMin[i];
       }
-
+    }
     /* get end time */
     end_time = read_timer();
     /* print results */
