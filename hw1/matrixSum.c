@@ -53,7 +53,7 @@ double read_timer() {
 }
 
 double start_time, end_time; /* start and end times */
-int size, stripSize;  /* assume size is multiple of numWorkers */
+int size, stripSize, minVal, maxVal, minPos, maxPos;  /* assume size is multiple of numWorkers */
 int sums[MAXWORKERS]; /* partial sums */
 int matrix[MAXSIZE][MAXSIZE]; /* matrix */
 
@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
   numWorkers = (argc > 2)? atoi(argv[2]) : MAXWORKERS;
   if (size > MAXSIZE) size = MAXSIZE;
   if (numWorkers > MAXWORKERS) numWorkers = MAXWORKERS;
-  stripSize = size/numWorkers;
+  stripSize = size/numWorkers; //delar upp i rader hur många rader varej worker får
 
   /* initialize the matrix */
   for (i = 0; i < size; i++) {
@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
 /* Each worker sums the values in one strip of the matrix.
    After a barrier, worker(0) computes and prints the total */
 void *Worker(void *arg) {
-  long myid = (long) arg;
+  long myid = (long) arg;  //vilken worker/thread
   int total, i, j, first, last;
 
 #ifdef DEBUG
@@ -117,24 +117,26 @@ void *Worker(void *arg) {
 #endif
 
   /* determine first and last rows of my strip */
-  first = myid*stripSize;
+  first = myid*stripSize; 
   last = (myid == numWorkers - 1) ? (size - 1) : (first + stripSize - 1);
 
   /* sum values in my strip */
   total = 0;
-  for (i = first; i <= last; i++)
-    for (j = 0; j < size; j++)
-      total += matrix[i][j];
-  sums[myid] = total;
-  Barrier();
-  if (myid == 0) {
+  for (i = first; i <= last; i++) //för varej rad
+    for (j = 0; j < size; j++)  //varje element i raden
+      total += matrix[i][j]; // utöka totalen med det elementet
+     
+
+  sums[myid] = total; //i array sums lägg till min total 
+  Barrier(); 
+  if (myid == 0) { //kör i ordning börjar med den första 
     total = 0;
     for (i = 0; i < numWorkers; i++)
-      total += sums[i];
+      total += sums[i];   //för alla summor lägger till i en total 
     /* get end time */
     end_time = read_timer();
     /* print results */
-    printf("The total is %d\n", total);
+    printf("The total is %d\n", total); 
     printf("The execution time is %g sec\n", end_time - start_time);
   }
 }
