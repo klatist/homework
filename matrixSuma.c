@@ -54,9 +54,18 @@ double read_timer() {
 }
 
 double start_time, end_time; /* start and end times */
-int size, stripSize, minVal, maxVal, minPos, maxPos;  /* assume size is multiple of numWorkers */
+int size, stripSize;  /* assume size is multiple of numWorkers */
 int sums[MAXWORKERS]; /* partial sums */
 int matrix[MAXSIZE][MAXSIZE]; /* matrix */
+
+typedef struct { /*struct to save the min/max value and its position*/
+  int row;
+  int col;
+  int val;
+}ValuePosition;
+
+ValuePosition workerMin[];
+ValuePosition workerMax[];
 
 void *Worker(void *);
 
@@ -123,21 +132,46 @@ void *Worker(void *arg) {
 
   /* sum values in my strip */
   total = 0;
+  ValuePosition min = {min.row= first, min.col= 0, min.val= matrix[first][0]};
+  ValuePosition max = {min.row= first, min.col= 0, min.val= matrix[first][0]};
   for (i = first; i <= last; i++) //för varej rad
     for (j = 0; j < size; j++)  //varje element i raden
       total += matrix[i][j]; // utöka totalen med det elementet
+      if(matrix[i][j] < min.val){
+        min.val = matrix[i][j];
+        min.row = i;
+        min.col = j;
+      }
+
+      if(matrix[i][j] > max.val){
+        max.val = matrix[i][j];
+        max.row = i;
+        max.col = j;
+      }
      
 
   sums[myid] = total; //i array sums lägg till min total 
+  workerMin[myid] = min;
+  workerMax[myid] = max;
+
   Barrier(); 
   if (myid == 0) { //kör i ordning börjar med den första 
     total = 0;
     for (i = 0; i < numWorkers; i++)
       total += sums[i];   //för alla summor lägger till i en total 
+      if (workerMin[i].val < min.val){
+        min = workerMin[i];
+      }
+      if (workerMax[i].val > max.val){
+        max = workerMin[i];
+      }
+
     /* get end time */
     end_time = read_timer();
     /* print results */
     printf("The total is %d\n", total); 
+    printf("the min value is %d at position [%d][%d]\n", min.val, min.row, min.col);
+    printf("the max value is %d at position [%d][%d]\n", max.val, max.row, max.col);
     printf("The execution time is %g sec\n", end_time - start_time);
   }
 }
