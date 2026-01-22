@@ -150,7 +150,8 @@ void *Worker(void *arg) {
         max.col = j;
       }
     }
-
+  
+    
   sums[myid] = total; //i array sums lägg till min total 
   workerMin[myid] = min;
   workerMax[myid] = max;
