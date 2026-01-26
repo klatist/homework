@@ -16,7 +16,8 @@ pthread_cond_t cv;
 pthread_mutex_t mutex;
 pthread_mutex_t done_lock;
 
-int readyToRead;
+int fileWorking;
+int outWorking;
 char buffer[100];
 bool done = false;
 
@@ -29,12 +30,14 @@ void* Read(void* arg){
         fgets(line, sizeof(line), stdin);
         //printf("%s",line);
         pthread_mutex_lock(&mutex);
-        while(readyToRead != 0){
+        while(fileWorking == 1 || outWorking == 1){
             pthread_cond_wait(&cv, &mutex);
         }
-        readyToRead = 2;
+        
         strcpy(buffer, line);
         pthread_cond_broadcast(&cv);
+        fileWorking = 1;
+        outWorking = 1;
         pthread_mutex_unlock(&mutex);
 
         
@@ -57,12 +60,12 @@ void* FileWrite(void* arg){
     while(!done)
     {
         pthread_mutex_lock(&mutex);
-        while(readyToRead == 0){
+        while(fileWorking == 0){
             pthread_cond_wait(&cv, &mutex);
         }
         strcpy(local_bfr, buffer);
-        readyToRead -= 1;
-        if(readyToRead == 0){
+        fileWorking = 0;
+        if(fileWorking == 0 && outWorking == 0){
             pthread_cond_signal(&cv);
         }
         pthread_mutex_unlock(&mutex);
@@ -89,12 +92,12 @@ void* OutWrite(void* arg){
     while(!done)
     {
         pthread_mutex_lock(&mutex);
-        while(readyToRead == 0){
+        while(outWorking == 0){
             pthread_cond_wait(&cv, &mutex);
         }
         strcpy(local_bfr, buffer);
-        readyToRead -= 1;
-        if(readyToRead == 0){
+        outWorking = 0;
+        if(fileWorking == 0 && outWorking == 0){
             pthread_cond_signal(&cv);
         }
         pthread_mutex_unlock(&mutex);
