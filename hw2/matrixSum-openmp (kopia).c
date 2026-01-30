@@ -46,13 +46,21 @@ int main(int argc, char *argv[]) {
   }
 
   start_time = omp_get_wtime();
-#pragma omp parallel for reduction (+:total) private(j)
+
+#pragma omp parallel 
+{
+
+
+#pragma omp for reduction (+:total) private(j)
   for (i = 0; i < size; i++)
     for (j = 0; j < size; j++){
       total += matrix[i][j];
+      
+
+
     }
 // implicit barrier
-
+}
   end_time = omp_get_wtime();
 
   printf("the total is %d\n", total);
