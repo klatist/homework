@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
 void *Worker(void *arg) {
   long myid = (long) arg;  //vilken worker/thread
   int total, i, j;
-  printf("worker %ld (pthread id %ld) has started\n", myid, pthread_self());
+  //printf("worker %ld (pthread id %ld) has started\n", myid, pthread_self());
 
   /*get task/row*/
   ValuePosition min = {min.row= 0, min.col= 0, min.val= matrix[0][0]};
