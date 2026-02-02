@@ -15,7 +15,7 @@
 double start_time, end_time;
 
 
-#define MAXSIZE 10000  /* maximum matrix size */
+#define MAXSIZE 100000  /* maximum matrix size */
 #define MAXWORKERS 8   /* maximum number of workers */
 
 int numWorkers;
@@ -53,6 +53,7 @@ double median(double arr[], int n) {
 double times[5];
 /* read command line, initialize, and create threads */
 int main(int argc, char *argv[]) {
+
   for(int run = 0; run < 5; run++){
     int i, j, total=0;
     ValuePosition matrixMin = {0, 0, -1}; //initilize shared matri
