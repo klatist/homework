@@ -1,6 +1,7 @@
 #ifndef _REENTRANT 
 #define _REENTRANT 
 #endif 
+
 #include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -8,6 +9,8 @@
 #include <time.h>
 #include <sys/time.h>
 #include <semaphore.h>
+#include <unistd.h>
+
 
 #define W 10
 #define SHARED 1
@@ -18,28 +21,34 @@ sem_t wake_parent; //signaling semaphore
 sem_t dish_lock;
 int parentWaiting = 1;
 
-sem_init(&wake_parent, SHARED, 0);
-sem_init(&dish_lock, SHARED, 1);
 
 
-void* babyBird(void* arg){
-    int birdId = (int) arg;
+
+void* babyBird(void *arg){
+    long birdId = (long) arg;
     while(true){
         sem_wait(&dish_lock); //access till dish
-        if(dish == 0){
-            if(parentWaiting){
+        if(dish == 0){ //there is no worms in dish
+            //if(parentWaiting){
+                printf("bird nr %ld chirps: CHIRP CHIRP PAPA MORE FOOD\n", birdId);
+                //parentWaiting = 0; 
                 sem_post(&wake_parent); //passing baton
-                parentWaiting = 0; 
+                
             }
-            sem_post(&dish_lock);
-        }
-        else{
+            else{
+                printf("bird nr %ld gives up lock\n", birdId);
+                sem_post(&dish_lock);
+            }
+        
+        else{ //there is worms in dish
             dish--;
+            printf("%d worms left\n", dish);
             sem_post(&dish_lock); // signalera klar nästa kan äta 
-            printf("bird nr %d is eating\n", birdId);
-        }     
+            printf("bird nr %ld is eating\n", birdId);
+        } 
 
-        //sleep
+        printf("bird nr %ld goes to sleep\n", birdId);
+        sleep(rand()%5);
 
     }
 }
@@ -47,30 +56,52 @@ void* babyBird(void* arg){
 void* papaBird(void* arg){
     while(true){
 
-        sem_wait(&dish_lock);
+        parentWaiting = 1;
+        printf("parent is waiting\n");
+        sem_wait(&wake_parent);
+
+        if(dish == 0){
+            dish = W; //critrical section
+            printf("papaBird delivers more worms, dish has %d worms\n", dish);
+            sem_post(&dish_lock);
+        }
+    }
+
+        /*sem_wait(&dish_lock);
+        printf("parent looks in dish\n");
         
         if(dish != 0){
+            printf("parent is waiting\n");
             parentWaiting = 1;
             sem_post(&dish_lock);
             sem_wait(&wake_parent);
         }
+            
         dish = W; //critrical section
-        sem_post(&dish_lock);
-    }
+        printf("papaBird delivers more worms, dish has %d worms\n", dish);
+        sem_post(&dish_lock);*/
+
+    
 }
 
 
 int main(){
+    sem_init(&wake_parent, SHARED, 0);
+    sem_init(&dish_lock, SHARED, 1);
 
     pthread_t babyBirdId[NUMBABYBIRDS];
     pthread_t papaBirdId;
 
-    for (int i = 0; i < NUMBABYBIRDS; i++){ //create babyBird threads
+    pthread_create(&papaBirdId, NULL, papaBird, NULL); //create parentBird thread
+
+    for (long i = 0; i < NUMBABYBIRDS; i++){ //create babyBird threads
         pthread_create(&babyBirdId[i], NULL, babyBird, (void*) i);
     }
 
-    pthread_create(&papaBirdId, NULL, papaBird, NULL); //create parentBird thread
-
-
+    for (long i = 0; i < NUMBABYBIRDS; i++){ //create babyBird threads
+        pthread_join(babyBirdId[i], NULL);
+    }
+    pthread_join(papaBirdId, NULL);
     
+
 }
