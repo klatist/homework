@@ -29,9 +29,9 @@ void* babyBird(void *arg){
     while(true){
         sem_wait(&dish_lock); //access till dish
         if(dish == 0){ //there is no worms in dish
-            //if(parentWaiting){
+            if(parentWaiting){
                 printf("bird nr %ld chirps: CHIRP CHIRP PAPA MORE FOOD\n", birdId);
-                //parentWaiting = 0; 
+                parentWaiting = 0; 
                 sem_post(&wake_parent); //passing baton
                 
             }
@@ -39,6 +39,7 @@ void* babyBird(void *arg){
                 printf("bird nr %ld gives up lock\n", birdId);
                 sem_post(&dish_lock);
             }
+        }
         
         else{ //there is worms in dish
             dish--;
@@ -49,8 +50,8 @@ void* babyBird(void *arg){
 
         printf("bird nr %ld goes to sleep\n", birdId);
         sleep(rand()%5);
-
     }
+    
 }
 
 void* papaBird(void* arg){
