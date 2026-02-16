@@ -1,3 +1,4 @@
+package birds;
 
 public class Main {
     private static int NUM_BABY_BIRD = 10;
