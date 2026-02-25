@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import matplotlib
+
 import matplotlib.pyplot as plt
 
 # Antal processer
@@ -31,13 +31,14 @@ plt.figure(figsize=(10,6))
 colors = {1:'blue', 2:'green', 3:'red'}
 
 for r in [1, 2, 3]:
-    plt.plot(processes, centralized[r], marker='o', color=colors[r], linestyle='-', label='Centralized R={r}')
-    plt.plot(processes, symmetric[r], marker='s', color=colors[r], linestyle='--', label='Symmetric R={r}')
-    plt.plot(processes, circular[r], marker='^', color=colors[r], linestyle='-.', label='Circular R={r}')
+    plt.plot(processes, centralized[r], marker='o', color=colors[r], linestyle='-', label=f'Centralized R={r}')
+    plt.plot(processes, symmetric[r], marker='s', color=colors[r], linestyle='--', label=f'Symmetric R={r}')
+    plt.plot(processes, circular[r], marker='^', color=colors[r], linestyle='-.', label=f'Circular R={r}')
 
 plt.xlabel("Number of processes")
+plt.yscale('log')
 plt.ylabel("Median execution time (s)")
 plt.title("Execution time vs Number of processes and rounds")
 plt.legend()
-plt.grid(True)
+plt.grid(True, which="both", linestyle="--", linewidth=0.5 )
 plt.show()
